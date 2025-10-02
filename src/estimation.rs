@@ -6,18 +6,29 @@ use crate::data::ProductData;
 use crate::demand::{predict_shares, solve_delta};
 use crate::error::{BlpError, Result};
 use crate::integration::SimulationDraws;
-use crate::solving::{ContractionOptions, ContractionSummary};
+use crate::options::{ProblemOptions, WeightingMatrix};
+use crate::solving::ContractionSummary;
 
 /// High-level wrapper that mirrors `pyBLP.Problem` on the demand side.
 #[derive(Clone, Debug)]
-pub struct BlpProblem {
+pub struct Problem {
     data: ProductData,
     draws: SimulationDraws,
+    options: ProblemOptions,
 }
 
-impl BlpProblem {
-    /// Constructs a new BLP estimation problem.
+impl Problem {
+    /// Construct a new BLP estimation problem with default solver options.
     pub fn new(data: ProductData, draws: SimulationDraws) -> Result<Self> {
+        Self::with_options(data, draws, ProblemOptions::default())
+    }
+
+    /// Construct a new problem with explicit solver options.
+    pub fn with_options(
+        data: ProductData,
+        draws: SimulationDraws,
+        options: ProblemOptions,
+    ) -> Result<Self> {
         if data.nonlinear_dim() == 0 && draws.dimension() != 0 {
             return Err(BlpError::dimension_mismatch(
                 "draw dimension",
@@ -25,7 +36,16 @@ impl BlpProblem {
                 draws.dimension(),
             ));
         }
-        Ok(Self { data, draws })
+        Ok(Self {
+            data,
+            draws,
+            options,
+        })
+    }
+
+    /// Start building a problem fluently, mirroring the ergonomics of pyBLP's kwargs.
+    pub fn builder() -> ProblemBuilder {
+        ProblemBuilder::default()
     }
 
     /// Accessor for product data.
@@ -38,16 +58,26 @@ impl BlpProblem {
         &self.draws
     }
 
-    /// Estimates the model for a given nonlinear parameter matrix `sigma`.
-    pub fn estimate(
+    /// Accessor for the default solver options carried by the problem.
+    pub fn options(&self) -> &ProblemOptions {
+        &self.options
+    }
+
+    /// Solve the model for a given nonlinear parameter matrix `sigma` using the stored options.
+    pub fn solve(&self, sigma: &DMatrix<f64>) -> Result<ProblemResults> {
+        self.solve_with_options(sigma, &self.options)
+    }
+
+    /// Solve the model with an explicit options override.
+    pub fn solve_with_options(
         &self,
         sigma: &DMatrix<f64>,
-        options: &EstimationOptions,
-    ) -> Result<EstimationResult> {
+        options: &ProblemOptions,
+    ) -> Result<ProblemResults> {
         let (delta, contraction) =
             solve_delta(&self.data, &self.draws, sigma, &options.contraction)?;
 
-        let weighting = match &options.weighting {
+        let weighting = match &options.gmm.weighting {
             WeightingMatrix::InverseZTZ => inverse_ztz(self.data.instruments())?,
             WeightingMatrix::Provided(matrix) => matrix.clone(),
         };
@@ -58,7 +88,7 @@ impl BlpProblem {
             predict_shares(&delta, &self.data, sigma, &self.draws, &options.contraction)?;
         let gmm_value = compute_gmm_objective(&self.data, &xi, &weighting);
 
-        Ok(EstimationResult {
+        Ok(ProblemResults {
             delta,
             beta,
             xi,
@@ -66,45 +96,67 @@ impl BlpProblem {
             gmm_value,
             contraction,
             weighting_matrix: weighting,
+            options_used: options.clone(),
         })
     }
-}
 
-/// Configuration knobs for demand-side estimation.
-#[derive(Clone, Debug)]
-pub struct EstimationOptions {
-    /// Options for the contraction mapping.
-    pub contraction: ContractionOptions,
-    /// Choice of GMM weighting matrix.
-    pub weighting: WeightingMatrix,
-}
-
-impl Default for EstimationOptions {
-    fn default() -> Self {
-        Self {
-            contraction: ContractionOptions::default(),
-            weighting: WeightingMatrix::InverseZTZ,
-        }
+    /// Backwards-compatible helper for earlier API versions that called `estimate` directly.
+    pub fn estimate(
+        &self,
+        sigma: &DMatrix<f64>,
+        options: &ProblemOptions,
+    ) -> Result<ProblemResults> {
+        self.solve_with_options(sigma, options)
     }
 }
 
-impl EstimationOptions {
-    /// Overrides the weighting matrix while keeping other defaults.
-    pub fn with_weighting(mut self, weighting: WeightingMatrix) -> Self {
-        self.weighting = weighting;
+/// Fluent builder for [`Problem`], mirroring pyBLP's keyword-heavy constructors.
+#[derive(Clone, Debug, Default)]
+pub struct ProblemBuilder {
+    products: Option<ProductData>,
+    draws: Option<SimulationDraws>,
+    options: ProblemOptions,
+}
+
+impl ProblemBuilder {
+    /// Create an empty builder.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Provide validated product data.
+    pub fn products(mut self, products: ProductData) -> Self {
+        self.products = Some(products);
         self
     }
 
-    /// Overrides the contraction options.
-    pub fn with_contraction(mut self, contraction: ContractionOptions) -> Self {
-        self.contraction = contraction;
+    /// Provide simulation draws for heterogeneous consumers.
+    pub fn draws(mut self, draws: SimulationDraws) -> Self {
+        self.draws = Some(draws);
         self
+    }
+
+    /// Override solver options carried by the constructed problem.
+    pub fn options(mut self, options: ProblemOptions) -> Self {
+        self.options = options;
+        self
+    }
+
+    /// Finalise the builder into a fully-configured problem.
+    pub fn build(self) -> Result<Problem> {
+        let products = self
+            .products
+            .ok_or_else(|| BlpError::missing_component("product data"))?;
+        let draws = self
+            .draws
+            .ok_or_else(|| BlpError::missing_component("simulation draws"))?;
+        Problem::with_options(products, draws, self.options)
     }
 }
 
 /// Describes the result of a BLP estimation run.
 #[derive(Clone, Debug)]
-pub struct EstimationResult {
+pub struct ProblemResults {
     /// Mean utilities recovered by the contraction mapping.
     pub delta: DVector<f64>,
     /// Linear taste parameters (equivalent to `beta` in BLP).
@@ -119,7 +171,14 @@ pub struct EstimationResult {
     pub contraction: ContractionSummary,
     /// Weighting matrix used during estimation.
     pub weighting_matrix: DMatrix<f64>,
+    /// Options that were in effect during estimation.
+    pub options_used: ProblemOptions,
 }
+
+/// Backwards-compatible alias for earlier versions of the crate.
+pub type BlpProblem = Problem;
+/// Backwards-compatible alias for earlier versions of the crate.
+pub type EstimationResult = ProblemResults;
 
 /// Computes the optimal linear parameters via two-stage least squares.
 fn compute_linear_parameters(
@@ -168,15 +227,6 @@ fn inverse_ztz(z: &DMatrix<f64>) -> Result<DMatrix<f64>> {
     Ok(cholesky.inverse())
 }
 
-/// Weighting matrix strategies for the GMM estimator.
-#[derive(Clone, Debug)]
-pub enum WeightingMatrix {
-    /// Uses the inverse of `Z'Z`, yielding the conventional two-step GMM weighting.
-    InverseZTZ,
-    /// Supplies a custom positive-definite weighting matrix.
-    Provided(DMatrix<f64>),
-}
-
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
@@ -195,10 +245,10 @@ mod tests {
             .unwrap();
         let draws = SimulationDraws::standard_normal(1, 0, 42);
         let sigma = DMatrix::<f64>::zeros(0, 0);
-        let problem = BlpProblem::new(data, draws).unwrap();
-        let options = EstimationOptions::default();
+        let problem = Problem::new(data, draws).unwrap();
+        let options = ProblemOptions::default();
 
-        let result = problem.estimate(&sigma, &options).unwrap();
+        let result = problem.solve_with_options(&sigma, &options).unwrap();
         assert_eq!(result.contraction.iterations, 1);
         assert!(result.gmm_value >= 0.0);
 
@@ -206,5 +256,36 @@ mod tests {
         let outside = 0.5_f64;
         let delta_0 = (0.2_f64 / outside).ln();
         assert_relative_eq!(result.delta[0], delta_0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn builder_requires_components() {
+        let market_ids = vec!["m1".to_string(), "m1".to_string()];
+        let shares = DVector::from_vec(vec![0.2, 0.3]);
+        let x1 = DMatrix::from_row_slice(2, 2, &[1.0, 1.0, 1.0, 2.0]);
+        let products = ProductDataBuilder::new(market_ids, shares)
+            .x1(x1)
+            .build()
+            .unwrap();
+        let draws = SimulationDraws::standard_normal(1, 0, 7);
+
+        let problem = Problem::builder()
+            .products(products.clone())
+            .draws(draws.clone())
+            .build()
+            .expect("builder succeeds");
+        assert_eq!(problem.data().product_count(), 2);
+
+        let err = Problem::builder()
+            .products(products)
+            .build()
+            .expect_err("missing draws");
+        assert!(matches!(err, BlpError::MissingComponent { .. }));
+
+        let err = Problem::builder()
+            .draws(draws)
+            .build()
+            .expect_err("missing products");
+        assert!(matches!(err, BlpError::MissingComponent { .. }));
     }
 }

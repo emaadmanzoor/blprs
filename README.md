@@ -26,7 +26,7 @@ blprs = { git = "https://github.com/eam398/blprs" }
 
 ### Example
 ```rust
-use blprs::{BlpProblem, ContractionOptions, EstimationOptions, WeightingMatrix};
+use blprs::{ContractionOptions, Problem, ProblemOptions, WeightingMatrix};
 use blprs::data::ProductDataBuilder;
 use blprs::integration::SimulationDraws;
 use nalgebra::{DMatrix, DVector};
@@ -43,14 +43,19 @@ let products = ProductDataBuilder::new(market_ids, shares)
     .expect("validated product data");
 
 let draws = SimulationDraws::standard_normal(200, 1, 1234);
-let problem = BlpProblem::new(products, draws).unwrap();
+let problem = Problem::builder()
+    .products(products)
+    .draws(draws)
+    .options(ProblemOptions::default())
+    .build()
+    .unwrap();
 
 let sigma = DMatrix::from_row_slice(1, 1, &[2.0]);
-let options = EstimationOptions::default()
+let options = ProblemOptions::default()
     .with_contraction(ContractionOptions { tolerance: 1e-10, ..Default::default() })
     .with_weighting(WeightingMatrix::InverseZTZ);
 
-let result = problem.estimate(&sigma, &options).unwrap();
+let result = problem.solve_with_options(&sigma, &options).unwrap();
 println!("beta = {:?}", result.beta);
 println!("GMM objective = {}", result.gmm_value);
 ```

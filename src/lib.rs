@@ -20,7 +20,7 @@
 //! ```no_run
 //! use blprs::data::{ProductData, ProductDataBuilder};
 //! use blprs::integration::SimulationDraws;
-//! use blprs::estimation::{BlpProblem, EstimationOptions};
+//! use blprs::{Problem, ProblemOptions};
 //! use nalgebra::{DMatrix, DVector};
 //!
 //! // Assume we have N products and K1 linear, K2 nonlinear characteristics.
@@ -39,11 +39,15 @@
 //!
 //! let draws = SimulationDraws::standard_normal(200, 1, 1234);
 //!
-//! let problem = BlpProblem::new(products, draws).expect("well-formed problem");
-//! let options = EstimationOptions::default();
+//! let problem = Problem::builder()
+//!     .products(products)
+//!     .draws(draws)
+//!     .options(ProblemOptions::default())
+//!     .build()
+//!     .expect("well-formed problem");
 //! let sigma = DMatrix::from_row_slice(1, 1, &[2.0]);
 //!
-//! let result = problem.estimate(&sigma, &options).expect("converged");
+//! let result = problem.solve(&sigma).expect("converged");
 //! println!("Estimated betas: {:?}", result.beta);
 //! ```
 //!
@@ -55,8 +59,11 @@ pub mod data;
 pub mod demand;
 pub mod error;
 pub mod estimation;
+pub mod formulation;
 pub mod integration;
+pub mod options;
 pub mod solving;
 
-pub use estimation::{BlpProblem, EstimationOptions, EstimationResult, WeightingMatrix};
+pub use estimation::{BlpProblem, EstimationResult, Problem, ProblemBuilder, ProblemResults};
+pub use options::{EstimationOptions, GmmOptions, ProblemOptions, WeightingMatrix};
 pub use solving::{ContractionOptions, ContractionSummary};

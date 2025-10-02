@@ -48,6 +48,10 @@ pub enum BlpError {
     /// Raised when numerical routines produce NaN.
     #[error("encountered NaN during {context}")]
     NumericalError { context: &'static str },
+
+    /// Raised when a required component has not been provided to a builder or solver.
+    #[error("{component} must be provided before solving the problem")]
+    MissingComponent { component: &'static str },
 }
 
 impl BlpError {
@@ -63,6 +67,11 @@ impl BlpError {
     /// Helper to raise when a matrix factorization fails due to singularity.
     pub fn singular(context: &'static str) -> Self {
         Self::SingularMatrix { context }
+    }
+
+    /// Helper for bubbling up missing component errors from builders.
+    pub fn missing_component(component: &'static str) -> Self {
+        Self::MissingComponent { component }
     }
 }
 
