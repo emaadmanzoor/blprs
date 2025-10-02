@@ -1,7 +1,7 @@
 # blprs
 <img src="assets/logo-transparent.png" height="200" align="left"/>
 
-*Fast Berry–Levinsohn–Pakes (BLP) estimation of random coefficient logit models in Rust*
+*Fast Berry–Levinsohn–Pakes (BLP) demand estimation in Rust*
 
 blprs *(/ˈblu.pərz/)* is a Rust implementation of [pyBLP](https://github.com/jeffgortmaker/pyblp).
 The crate currently implements the demand side of random-coefficient logit models
