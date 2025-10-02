@@ -1,14 +1,14 @@
 [package]
 name = "blprs"
-version = "0.1.0"
-edition = "2021"
+version = "0.0.1"
+edition = "2025"
 description = "Fast Berry–Levinsohn–Pakes (BLP) estimation for random coefficients logit models"
 license = "MIT"
-repository = "https://github.com/eam398/blprs"
+repository = "https://github.com/emaadmanzoor/blprs"
 documentation = "https://docs.rs/blprs"
 readme = "README.md"
-authors = ["Elliot <elliot@example.com>"]
-keywords = ["econometrics", "blp", "industrial-organization", "gmm", "optimization"]
+authors = ["Emaad Manzoor <emaadmanzoor@gmail.com>"]
+keywords = ["econometrics", "blp", "optimization"]
 categories = ["science", "algorithms", "mathematics"]
 
 [dependencies]
