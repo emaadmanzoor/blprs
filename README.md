@@ -1,5 +1,5 @@
 # blprs
-<img src="assets/logo.png" height="100" align="right"/>
+<img src="assets/logo.jpeg" height="200" align="right"/>
 
 *Berry–Levinsohn–Pakes demand estimation in Rust*
 
