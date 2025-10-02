@@ -1,5 +1,5 @@
 # blprs
-<img src="assets/logo.jpeg" height="200" align="right"/>
+<img src="assets/logo-transparent.png" height="200" align="left"/>
 
 *Berry–Levinsohn–Pakes demand estimation in Rust*
 
@@ -10,6 +10,8 @@ The API tracks pyBLP concepts (problems, formulations, integrations, moments) so
 notebooks and scripts with minimal
 friction. Supply-side estimation, optimal instruments, counterfactual engines, and other
 advanced features are actively under development.
+
+<br/>
 
 ## Installation
 
