@@ -1,5 +1,5 @@
-url: "https://blp.rs"
-baseurl: "/"
+url: "https://emaadmanzoor.com"
+baseurl: "/blprs"
 name: blprs
 description: "Fast Berry–Levinsohn–Pakes estimation in Rust"
 author_image_path: /images/logo-transparent.png
