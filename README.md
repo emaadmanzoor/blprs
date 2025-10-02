@@ -1,30 +1,43 @@
 # blprs
+<img src="assets/logo.svg" height="180" align="right" alt="blprs logo"/>
 
-Fast Berry–Levinsohn–Pakes (BLP) estimation for random coefficients logit models, written in Rust. The goal of `blprs` is to provide a feature-complete and performant alternative to [pyBLP](https://github.com/jeffgortmaker/pyblp), accompanied by rich inline documentation and an ergonomic Rust-first API.
+*Fast Berry–Levinsohn–Pakes estimation in safe, expressive Rust*
 
-> ⚠️ This is an early preview. The demand-side estimator is implemented, but advanced functionality (supply, optimal instruments, bootstrapping, simulation aides, and the full suite of `pyBLP` conveniences) is still under construction.
+[![docs.rs](https://img.shields.io/docsrs/blprs?label=docs.rs)](https://docs.rs/blprs)
+[![crates.io](https://img.shields.io/crates/v/blprs.svg)](https://crates.io/crates/blprs)
+[![license](https://img.shields.io/crates/l/blprs.svg)](LICENSE)
 
-## Highlights
-- idiomatic Rust translation of the core BLP demand estimator: product data validation, simulation draws, contraction mapping, and two-step GMM.
-- ready-to-read inline documentation and unit tests that mirror `pyBLP` notebooks.
-- modular architecture prepared for supply-side extensions, optimal instruments, and equilibrium pricing models.
-- no `unsafe` code; builds on `nalgebra`, `rayon`, and `serde`.
+`blprs` is a Rust-first translation of the pyBLP API for estimating differentiated
+product demand. It keeps pyBLP’s concepts—problems, formulations, integration schemes,
+moments—while leaning on Rust’s performance, deterministic parallelism, and type safety.
+The crate currently implements the demand side of random-coefficient logit models and is
+actively expanding toward full parity.
 
-## Getting started
-Add the crate once it is published:
+## Overview
+
+`blprs` implements the demand side of Berry–Levinsohn–Pakes (BLP) estimation for
+random coefficients logit models. The API tracks pyBLP concepts (problems,
+formulations, integrations, moments) so users can port notebooks and scripts with minimal
+friction. Supply-side estimation, optimal instruments, counterfactual engines, and other
+advanced features are actively under development.
+
+## Installation
+
+Add the crate from crates.io:
 
 ```sh
 cargo add blprs
 ```
 
-For now, use a Git dependency while the crate incubates:
+or depend on the repository while the API stabilises:
 
 ```toml
 [dependencies]
-blprs = { git = "https://github.com/eam398/blprs" }
+blprs = { git = "https://github.com/emaadmanzoor/blprs" }
 ```
 
-### Example
+## Quick example
+
 ```rust
 use blprs::{ContractionOptions, Problem, ProblemOptions, WeightingMatrix};
 use blprs::data::ProductDataBuilder;
@@ -55,27 +68,39 @@ let options = ProblemOptions::default()
     .with_contraction(ContractionOptions { tolerance: 1e-10, ..Default::default() })
     .with_weighting(WeightingMatrix::InverseZTZ);
 
-let result = problem.solve_with_options(&sigma, &options).unwrap();
-println!("beta = {:?}", result.beta);
-println!("GMM objective = {}", result.gmm_value);
+let results = problem.solve_with_options(&sigma, &options).unwrap();
+println!("beta = {:?}", results.beta);
 ```
 
-## API surface
-- `data`: builders and validation for product-level matrices (X1, X2, instruments).
-- `integration`: Monte Carlo draws with shape checking and seeded reproducibility.
-- `demand`: share prediction and the BLP contraction mapping.
-- `solving`: solver configuration and diagnostics.
-- `estimation`: high-level `BlpProblem` wrapper that mirrors `pyblp.Problem` for the demand side.
+## Features
 
-## Roadmap
-1. Implement supply-side marginal cost recovery and equilibrium pricing.
-2. Add optimal instrument routines and support for demographic heterogeneity.
-3. Provide full pyBLP-style convenience APIs (formulations, problems, counterfactuals).
-4. Publish crate releases, CI, benchmarks, and docs.rs integrations.
+- R/pyBLP-style builder surface for configuring problems
+- Validated product data with contiguous market partitioning
+- Monte Carlo integration with reproducible seeds
+- BLP contraction with configurable damping and diagnostics
+- Two-step GMM estimator with customizable weighting matrices
+- Rich error reporting for data shape issues and solver failures
 
-Contributions and feature requests are welcome via pull requests or GitHub discussions.
+Planned parity items include:
 
-## Development
+- Supply-side markups, marginal costs, and conduct alternatives
+- Optimal instruments and demographic interactions
+- Micro moment support and importance sampling
+- Counterfactual engines (mergers, taxes, welfare analysis)
+- Extended integration schemes (Halton, Sobol, sparse grids)
+- Analytic gradients, clustered standard errors, and bootstrapping
+
+The project roadmap tracks which pyBLP features have landed and what is in
+progress.
+
+## Contributing & support
+
+Feedback and pull requests are welcome. Please use the
+[GitHub issue tracker](https://github.com/emaadmanzoor/blprs/issues) for bugs or feature
+requests.
+
+Development quickstart:
+
 ```sh
 cargo fmt
 cargo clippy
@@ -83,4 +108,5 @@ cargo test
 ```
 
 ## License
+
 Licensed under the MIT License. See [LICENSE](LICENSE) for details.

@@ -1,8 +1,8 @@
 //! Monte Carlo integration helpers for simulating heterogeneous consumer tastes.
 
 use nalgebra::{DMatrix, DVector};
-use rand::rngs::SmallRng;
 use rand::SeedableRng;
+use rand::rngs::SmallRng;
 use rand_distr::{Distribution, StandardNormal};
 
 use crate::error::{BlpError, Result};
