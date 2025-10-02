@@ -24,3 +24,23 @@ target
 # Added by cargo
 
 /target
+
+# Jekyll build artifacts
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+
+# Ruby bundler and dependencies
+.bundle/
+vendor/
+vendor/bundle/
+
+# Ruby build/test outputs
+coverage/
+tmp/
+log/
+
+# OS and editor cruft
+.DS_Store
+*.swp
