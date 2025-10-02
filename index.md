@@ -67,7 +67,8 @@ println!("beta = {:?}", result.beta);
 ```
 
 Need the full API surface? Jump into the [quickstart]({{ '/quickstart/' | relative_url }}) or dive into
-the [reference documentation](https://docs.rs/blprs).
+the [reference documentation](https://docs.rs/blprs). Curious about the
+economics? Visit the [theory page]({{ '/theory/' | relative_url }}).
 
 ## Stay in the loop
 
