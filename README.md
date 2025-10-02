@@ -1,23 +1,13 @@
 # blprs
-<img src="assets/logo.svg" height="180" align="right" alt="blprs logo"/>
+<img src="assets/logo.png" height="100" align="right"/>
 
-*Fast Berry–Levinsohn–Pakes estimation in safe, expressive Rust*
+*Berry–Levinsohn–Pakes demand estimation in Rust*
 
-[![docs.rs](https://img.shields.io/docsrs/blprs?label=docs.rs)](https://docs.rs/blprs)
-[![crates.io](https://img.shields.io/crates/v/blprs.svg)](https://crates.io/crates/blprs)
-[![license](https://img.shields.io/crates/l/blprs.svg)](LICENSE)
-
-`blprs` is a Rust-first translation of the pyBLP API for estimating differentiated
-product demand. It keeps pyBLP’s concepts—problems, formulations, integration schemes,
-moments—while leaning on Rust’s performance, deterministic parallelism, and type safety.
-The crate currently implements the demand side of random-coefficient logit models and is
-actively expanding toward full parity.
-
-## Overview
-
-`blprs` implements the demand side of Berry–Levinsohn–Pakes (BLP) estimation for
-random coefficients logit models. The API tracks pyBLP concepts (problems,
-formulations, integrations, moments) so users can port notebooks and scripts with minimal
+blprs is a Rust replication of [pyBLP](https://github.com/jeffgortmaker/pyblp).
+The crate currently implements the demand side of random-coefficient logit models
+and is actively expanding toward full parity.
+The API tracks pyBLP concepts (problems, formulations, integrations, moments) so users can port
+notebooks and scripts with minimal
 friction. Supply-side estimation, optimal instruments, counterfactual engines, and other
 advanced features are actively under development.
 
