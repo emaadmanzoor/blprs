@@ -1,0 +1,23 @@
+url: "https://eam398.github.io"
+baseurl: "/blprs"
+name: blprs
+description: "Fast Berry–Levinsohn–Pakes estimation in Rust"
+author_image_path: /images/logo.svg
+
+# Markdown rendering
+kramdown:
+  input: GFM
+  #  smart_quotes: apos,apos,quot,quot
+  parse_block_html: true
+
+highlighter: rouge
+
+# Site settings
+permalink: /blog/:year/:month/:day/:title/
+
+# important since the site is compiled
+# on Github's servers
+timezone: America/New_York
+
+plugins:
+  - jekyll-redirect-from
